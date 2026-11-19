@@ -8,14 +8,14 @@ The existing repo is a rough MVP of stack and schema. Most of it will be reworke
 
 Each phase produces artifacts. A phase is done when those artifacts exist and match the product context.
 
-| Phase | Goal | Artifacts |
-| --- | --- | --- |
-| 1 | Shared language for the product | `docs/domain.md` |
-| 2 | Settled stack, architecture, local setup, deployment | `docs/architecture.md` (update `README.md` to match) |
-| 3 | Data model, RLS, Drizzle schema, migration | `docs/data-model.md`, `src/lib/server/db/schema.ts`, a new Drizzle migration |
-| 4 | Rough UI/server MVP of the core travel split | Working group create/view/add-expense/balances flow |
+| Phase | Status | Goal | Artifacts |
+| --- | --- | --- | --- |
+| 1 | **Done** | Shared language for the product | [domain-overview.md](./domain-overview.md), [domain.md](./domain.md) |
+| 2 | Not started | Settled stack, architecture, local setup, deployment | `docs/architecture.md` (update `README.md` to match) |
+| 3 | Not started | Data model, RLS, Drizzle schema, migration | `docs/data-model.md`, `src/lib/server/db/schema.ts`, a new Drizzle migration |
+| 4 | Not started | Rough UI/server MVP of the core travel split | Working group create/view/add-expense/balances flow |
 
-Later phases may rewrite earlier docs if a decision changes. Keep the docs the source of truth.
+Later phases may rewrite earlier docs if a decision changes. Keep the docs the source of truth. Phase 1 is finished; later phases should follow those two domain files, not re-draft the product language from this plan’s original phase 1 checklist.
 
 ## Working decisions
 
@@ -51,38 +51,14 @@ Already in place and should be treated as the default unless phase 2 or 3 replac
 
 ## Phase 1 — Document the domain
 
-**Goal:** A non-technical glossary and rules document that engineers, future UI copy, and the data model can all use.
+**Status: done.**
 
-**Write:** `docs/domain.md`
+**Outputs:**
 
-**How:** Draft from [product-context.md](./product-context.md) and the working decisions. Use everyday language. No table names, no RLS, no framework names.
+- [domain-overview.md](./domain-overview.md) — short walkthrough of the product in domain language
+- [domain.md](./domain.md) — detailed terms and rules
 
-**The document must define at least:**
-
-- Expenses Divider
-- Expenses group (trip)
-- Link group vs private group
-- Group URL / secret link
-- Participant / member (person on the trip vs person signed in)
-- Expense
-- Payer
-- Share (who the expense was for, and how much of it)
-- Even split, subset split, custom amounts
-- Group currency
-- Balance (net: paid minus owed)
-- Settlement suggestion (who should pay whom)
-- Invite (private groups)
-- Google sign-in (when it is required)
-
-**Rules to spell out:**
-
-- Default split is even among all current members.
-- Deselecting members removes them from that expense only.
-- Custom amounts must add up to the expense total.
-- Even splits that do not divide cleanly: remainder stays in the smallest currency unit and is distributed deterministically (document the rule in domain language, e.g. “leftover cents go to members in the order they appear, starting from the payer”).
-- Suggested repayments are a convenience, not a history of actual transfers, until a later phase.
-
-**Done when:** `docs/domain.md` can be read by a non-engineer and answers “what is this product?” without looking at code.
+These two files are the domain source of truth. Later phases should follow them. If they disagree with this plan’s working decisions or with [product-context.md](./product-context.md), update those documents to match the domain files.
 
 ---
 
