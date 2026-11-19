@@ -11,27 +11,29 @@ Each phase produces artifacts. A phase is done when those artifacts exist and ma
 | Phase | Status | Goal | Artifacts |
 | --- | --- | --- | --- |
 | 1 | **Done** | Shared language for the product | [domain-overview.md](./domain-overview.md), [domain.md](./domain.md) |
-| 2 | Not started | Settled stack, architecture, local setup, deployment | `docs/architecture.md` (update `README.md` to match) |
+| 2 | **Done** | Settled stack, architecture, local setup, deployment | [architecture.md](./architecture.md), [README.md](../README.md) |
 | 3 | Not started | Data model, RLS, Drizzle schema, migration | `docs/data-model.md`, `src/lib/server/db/schema.ts`, a new Drizzle migration |
 | 4 | Not started | Rough UI/server MVP of the core travel split | Working group create/view/add-expense/balances flow |
 
-Later phases may rewrite earlier docs if a decision changes. Keep the docs the source of truth. Phase 1 is finished; later phases should follow those two domain files, not re-draft the product language from this plan’s original phase 1 checklist.
+Later phases may rewrite earlier docs if a decision changes. Keep the docs the source of truth. Phases 1 and 2 are finished; later phases should follow the domain files and [architecture.md](./architecture.md).
 
 ## Working decisions
 
 These resolve open points in the brief. Change them here if they are wrong; then continue.
 
-1. **Link groups need no login.** Creating a link group, opening it, adding members, and adding expenses works with only the URL.
-2. **Google sign-in is required for private groups** (create, accept invite, add expenses). There is never email/password.
-3. **Phase 4 MVP is link groups only.** Private groups and email invites are specified in domain and data model, but not built in the first UI.
+1. **Public groups need no visible login.** Creating a public group, opening it, and adding expenses works with the URL. Under the hood the browser gets a Supabase **anonymous** session. “Who you are” is `group_member_identities`. The **creator is a member**, not an Auth user: anyone claiming that member (e.g. Bob) has full admin.
+2. **Google sign-in is required for private groups.** There is never email/password. The app does not send mail: access is URL plus a Google account whose email is listed on the group.
+3. **Phase 4 MVP is public groups only.** Private groups are specified in domain and architecture, but not built in the first UI.
 4. **Members are named people.** A member can exist before anyone logs in. Google identity can later be linked to a member.
-5. **One currency per group.** No currency conversion.
+5. **One currency per group.** No currency conversion. For now every group is euro.
 6. **Money is stored as integer minor units** (cents). Display uses the group currency.
 7. **Settlement is computed, not recorded, in the MVP.** The app shows balances and a minimized list of suggested repayments. Marking a repayment as paid is out of the first MVP.
-8. **Anyone with a link-group URL can edit or delete expenses and members** in the MVP. Private-group permissions will be stricter when that UI exists.
-9. **The SvelteKit server is the only database client.** The browser does not use the Supabase anon key to read or write tables. RLS stays enabled as a safety net (deny by default).
+8. **Who can change what** follows [domain.md](./domain.md): in a public group, anyone acting as the creator member has admin (member list and all expenses); other members edit expenses they recorded; you may add your own name if you are not on the list.
+9. **RLS applies on the request path.** SvelteKit loads and writes group data as the visitor’s Auth user (anonymous or Google), never as `service_role` or table owner. `DATABASE_URL` is for migrations only. The browser still does not query tables (performance). Policies are real, not a deny-all backstop. Details: [architecture.md](./architecture.md).
 10. **PWA / native app and a custom domain are later.** Deploy the web app on Vercel first.
 11. **No automated tests** until the owner asks for them. CI keeps typecheck, lint, and build.
+12. **The product UI is German and English.** Default English when the visitor has no saved choice and the browser language is neither. Docs stay English.
+13. **Performance matters, especially on phones.** Most use is on mobile, including older devices. Prefer server-rendered pages, little client JS, and no extra round trips. Details: [architecture.md](./architecture.md#performance). The UI is mobile first: [product-context.md](./product-context.md).
 
 ## Current repo (starting point)
 
@@ -45,7 +47,7 @@ Already in place and should be treated as the default unless phase 2 or 3 replac
 - GitHub Actions: `ci` on pull requests and `main`; manual **Migrate production database** workflow
 - Landing page copy only; no group UI yet
 
-`created_by_user_id` currently requires an `auth.users` row. That conflicts with decision 1 (create a link group without login). Phase 3 must fix this.
+`created_by_user_id` on groups should not be the public-group creator. Phase 3 stores a **creator member** instead. RLS admin = identity linked to that member. Request-path code must not use the table-owner `DATABASE_URL`.
 
 ---
 
@@ -64,64 +66,14 @@ These two files are the domain source of truth. Later phases should follow them.
 
 ## Phase 2 — Stack, architecture, environment, deployment
 
-**Goal:** Settle and write down how the system is built, run locally, and shipped. Prefer the current repo; only change it when the product decisions require it.
+**Status: done.**
 
-**Write:** `docs/architecture.md`  
-**Also:** keep `README.md` as the short “how do I run this?” version of the same facts.
+**Outputs:**
 
-### Stack (settled unless this phase finds a blocker)
+- [architecture.md](./architecture.md) — stack, request path, access, i18n, routes, env, CI/CD
+- [README.md](../README.md) — clone-and-run
 
-| Concern | Choice |
-| --- | --- |
-| App | SvelteKit + TypeScript, Svelte 5 |
-| UI | Tailwind CSS 4 + shadcn-svelte + Lucide |
-| Database | Supabase Postgres |
-| ORM / migrations | Drizzle ORM + Drizzle Kit |
-| Auth | Supabase Auth, Google provider only (used when a login is required) |
-| Email | Not in phase 4; private-group invites will need a mail provider later (Supabase Auth or transactional email) |
-| Hosting | Vercel (adapter already in the project) |
-| Repo | GitHub |
-| CI | Existing GitHub Actions (`ci`, manual production migrate) |
-| Tests | None for now |
-
-### Architecture to document
-
-```
-Browser  →  SvelteKit (Vercel)  →  Postgres (Supabase)
-                 │
-                 └── Supabase Auth (Google) when the user signs in
-```
-
-Document these rules:
-
-- All reads and writes of group data go through SvelteKit server load functions and form actions (or server APIs).
-- `DATABASE_URL` is private. Never `PUBLIC_`.
-- Use the Supabase transaction pooler for the app (port 6543, no prepared statements).
-- RLS is enabled; the app role used from the server is trusted. Browser roles get no policies until we deliberately add them.
-- Link-group authorization is “knowledge of the UUID in the URL.” Treat UUIDs as secrets. Do not list all groups on a public index.
-- Private-group authorization is “Google user is an invited member.” Implementation can wait until after the link-group MVP, but the architecture doc should describe it.
-- Group routes look like `/g/[groupId]` (final path can be chosen in this phase; pick one and stick to it).
-- Settlement math lives in a pure server-side module, not in SQL views, for the first version.
-
-### Dev environment to document
-
-1. Node 22 (matches CI).
-2. Copy `.env.example` → `.env`.
-3. Supabase project for development (can be a hosted free project; local Supabase is optional, not required).
-4. `npm install`, `npm run db:migrate`, `npm run dev`.
-5. Commands: `check`, `lint`, `ci`, `db:generate`, `db:migrate`, `db:studio`.
-6. Google OAuth is not required to work on the link-group MVP. Document how to enable it when private groups or “claim this member” is built.
-
-### Deployment to document
-
-1. GitHub is the source of truth; Vercel deploys from `main`.
-2. Vercel env: `DATABASE_URL` (and later Supabase Auth URL/keys for Google).
-3. Vercel does **not** run migrations on startup.
-4. After merging a schema change: run the manual **Migrate production database** workflow (GitHub `production` environment + `DATABASE_URL` secret), then deploy or enable the new code.
-5. Prefer backwards-compatible migrations once real data exists.
-6. Custom domain: not now. Note that Vercel can attach a domain later without changing the app architecture.
-
-**Done when:** `docs/architecture.md` and `README.md` agree, and a new developer can set up the project from the README alone.
+These two files are the architecture source of truth. Later phases should follow them (and the domain files). If they disagree with this plan, update the plan.
 
 ---
 
@@ -137,9 +89,10 @@ Document these rules:
 
 Keep the current shape unless a rule below forces a change:
 
-- **groups:** id, name, currency, access mode (`public_link` | `private`), created at. Creator: nullable or omitted so a link group can be created without an auth user (this is the main break from the current schema).
+- **groups:** id, name, currency, access mode (`public_link` | `private`), created at. Creator: a **member** (`creator_member_id` or equivalent), not an Auth user. Anyone linked to that member has admin in a public group.
 - **group_members:** person on the trip; name required; email optional (needed later for private invites).
-- **group_member_identities:** links `auth.users` to a member in a group (at most one auth user per group; a member may have zero or one identity in the MVP).
+- **group_member_identities:** links `auth.users` to a member in a group (one Auth user maps to one member per group; several Auth users may be the same member, e.g. two people claiming Lucas).
+- **group access grants** (name in the data-model doc): this `auth.uid()` may see this group. Inserted when they open a public group URL, so RLS does not allow listing every public group.
 - **expenses:** description, amount in minor units, payer member, timestamps. Optional display date can wait.
 - **expense_shares:** one row per participating member; amounts in minor units; shares for an expense must sum to the expense total (enforce in the application in MVP; add a DB constraint or trigger later if we want).
 
@@ -154,13 +107,13 @@ Do **not** add a settlements table in this phase.
 
 ### RLS
 
-Document and implement:
+Document and implement (must match [architecture.md](./architecture.md); do not bypass):
 
 - `ENABLE ROW LEVEL SECURITY` on every public table (already true).
-- **No policies for `anon` / `authenticated` in the first version**, so the Supabase API cannot read or write app data even if the anon key leaks into the client later.
-- The SvelteKit server uses the direct/pooler connection and bypasses RLS (Postgres owner/superuser or a table-owner role). State this explicitly so nobody “fixes” it by adding the anon key to the browser.
-- Sketch the **future** policies for private groups (authenticated user may access rows for groups where they have a `group_member_identities` row) without enabling them until the browser or a restricted DB role needs them.
-- Link-group access is **not** expressed as “anyone who knows the UUID can `SELECT` via PostgREST.” That would make the anon key a full public API. The server enforces the link.
+- **Policies for `anon` and `authenticated`** so `auth.uid()` can read/write only what the domain allows (grants, identities, recorded-by, creator **member**).
+- No `USING (true)` that would let the anon key list every group.
+- Do not use `DATABASE_URL` / table owner / `service_role` for app queries. Phase 4 uses the user JWT.
+- Private-group rules (email matches member) belong in the same policies even if that UI is later.
 
 ### Migration process
 
@@ -228,6 +181,6 @@ Not scheduled here, but the domain and architecture should not paint us into a c
 
 Only reopen these if the working decisions are wrong:
 
-- Should creating a **link** group require Google after all?
+- Should creating a **public** group require Google after all?
 - Should phase 4 include private groups?
 - Should suggested repayments be stored as first-class “settled” records in the first MVP?

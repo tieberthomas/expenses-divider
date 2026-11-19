@@ -8,6 +8,8 @@ Expenses Divider is a web app for splitting travel costs with a small group of p
 
 Typical story: friends go on a trip. One person pays for flights, another for the hotel, another for food. They want a shared place to record who paid for what, who the cost was for, and who still owes whom.
 
+The product UI is German and English. Developer docs stay English.
+
 ## Who it is for (now)
 
 People organizing a trip who want to share a list of expenses and end up with a clear settlement. It is not aiming to be a general household-finance product yet.
@@ -47,6 +49,8 @@ Accounts:
 - Splitting should cover the common cases (everyone, a subset, custom amounts) without extra concepts.
 - The settlement should answer “who owes who how much?” in as few payments as possible.
 - Better UX than Splitwise for this travel case matters more than matching Splitwise feature-for-feature.
+- People will use it mostly on phones, including older phones. It should feel fast there. Opening a group and adding an expense should feel immediate.
+- The UI is mobile first. Desktop is a wider version of the same screens, not a separate design.
 
 ## Later, not now
 
@@ -64,4 +68,4 @@ Accounts:
 - No tests for now
 - GitHub for the repository
 
-These preferences are constraints for the architecture document in phase 2, not a second source of product rules.
+These preferences are recorded in [architecture.md](./architecture.md). That file is the source of truth for stack and deployment, not this brief.

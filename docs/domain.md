@@ -51,17 +51,19 @@ The **group URL** (the **secret link**) is the address of one group. Sharing it 
 
 ### Creator
 
-The **creator** is the person who started the group.
+The **creator** is a **member**: the named person who started the group (for example Bob).
 
-When they create the group, they name the people on the trip, including themselves and the others they already know about (for example Bob creates the group and says Alice and Linda are also on it).
+When they create the group, they list the people on the trip, including that creator name and the others they already know about (Bob, Alice, Linda).
 
-Only the creator can remove or add people to the expenses group or change their name.
+In a **public group**, anyone acting as that member has the creator’s powers. If Bob created the group, anyone who says they are Bob can manage the group. That is not an account. Two people who both say they are Bob both have those powers.
+
+In a **private group**, the creator still signs in with Google. They are still a member; their Google email is how they are that member.
+
+Only someone with creator powers can remove or add people to the expenses group or change their name.
 
 Other people cannot do those things. In a public group, the one exception is: if you open the link and you are not on the list yet, you may add **your own** name when you say who you are.
 
-The creator can also add, change, and delete **any expense** in the group, including expenses recorded by other members.
-
-In a **public group**, the creator does not need an account. In a **private group**, the creator signs in with Google.
+Someone with creator powers can also add, change, and delete **any expense** in the group, including expenses recorded by other members.
 
 ### Member
 
@@ -222,9 +224,9 @@ The app chooses a small number of payments rather than having every debtor pay e
 | --- | --- | --- |
 | Open the group | Anyone with the URL | Signed in with Google, and that account’s email is listed on the group |
 | Say who you are (pick a name, or add your own) | Anyone with the URL, first time they open it | They are the member whose email matches the Google account |
-| Rename or remove members, or add someone else | Only the creator | Only the creator |
-| Add expenses | After saying who you are (the creator always can) | After they have access as that member (the creator always can) |
-| Change or delete an expense | The member who recorded it, or the creator | The member who recorded it, or the creator |
+| Rename or remove members, or add someone else | Anyone acting as the creator member | Only the creator |
+| Add expenses | After saying who you are | After they have access as that member |
+| Change or delete an expense | The member who recorded it, or anyone acting as the creator member | The member who recorded it, or the creator |
 | Account required | No | Yes, Google |
 
 There is no password account. Google is only required when the group is private, or later if a member wants to attach their Google account to their name.

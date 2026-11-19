@@ -1,32 +1,14 @@
 # Expenses Divider
 
-The first technical milestone for Expenses Divider: a SvelteKit app hosted on Vercel whose button increments a shared Postgres counter in Supabase.
+A web app for splitting travel costs. Product language: [domain overview](docs/domain-overview.md). How the system is built: [architecture](docs/architecture.md).
 
-## Stack
-
-- SvelteKit and TypeScript
-- Tailwind CSS and shadcn-svelte
-- Supabase Postgres
-- Drizzle ORM and Drizzle Kit
-- Vercel deployment
+The UI is German and English. These docs are English.
 
 ## Local setup
 
-1. Copy `.env.example` to `.env` and replace `DATABASE_URL` with the Supabase transaction-pooler connection string.
+Node 22.
+
+1. Copy `.env.example` to `.env`. Set `DATABASE_URL` (migrations) plus `PUBLIC_SUPABASE_URL` and `PUBLIC_SUPABASE_ANON_KEY`. Enable anonymous sign-in in the Supabase project.
 2. Run `npm install`.
-3. Run `npm run db:generate` then `npm run db:migrate` to create the `demo_counter` table.
+3. Run `npm run db:migrate`.
 4. Run `npm run dev` and open the displayed local URL.
-
-For the initial hosted database, use the idempotent `supabase/bootstrap.sql` in the Supabase SQL Editor. It creates the counter and marks the committed Drizzle migration as applied. This workspace's Node runtime cannot run Drizzle Kit because of an OS-level user-profile error; the SQL is provided so provisioning is not blocked.
-
-## Commands
-
-- `npm run check` — TypeScript and Svelte checking
-- `npm run lint` — formatting and linting
-- `npm run db:generate` — create a committed Drizzle migration
-- `npm run db:migrate` — apply migrations
-- `npm run build` — production build
-
-## Deployment
-
-Set `DATABASE_URL` as an environment variable in Vercel for Preview and Production. The value is server-only and must never be prefixed with `PUBLIC_`.
