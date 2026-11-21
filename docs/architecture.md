@@ -75,8 +75,9 @@ Who may do what: [domain.md](./domain.md).
 
 - Group URL: `/g/[groupId]`. UUID is a secret. No list of all groups.
 - First visit: anonymous Auth (no UI). `auth.uid()` is the principal.
-- First open of a public group: insert a **grant** `(auth.uid(), group_id)`.
+- First open of a public group: insert a **grant** `(auth.uid(), group_id)` if they do not already have one.
 - After they pick a name: `group_member_identities` (`auth.uid()` → member). Return visits use the session.
+- Creating a group writes grant + identity for the creator member in the same request, so the creator is not asked who they are.
 - Creator admin in RLS: identity for the group’s **creator member**.
 - Private groups: Google session; member email matches. Link the anonymous user when they sign in with Google.
 - Public-group MVP: anonymous Auth (URL + anon key). Google provider later.

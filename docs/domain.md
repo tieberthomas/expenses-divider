@@ -45,7 +45,7 @@ The **group URL** (the **secret link**) is the address of one group. Sharing it 
 
 The **creator** is a **member**: the named person who started the group (for example Bob).
 
-When they create the group, they list the people on the trip, including that creator name and the others they already know about (Bob, Alice, Linda).
+When they create the group, they list the people on the trip, including that creator name and the others they already know about (Bob, Alice, Linda). Creating the group already records that this browser is that creator member. They are not asked who they are when they land on the group.
 
 In a **public group**, anyone acting as that member has the creator’s powers. If Bob created the group, anyone who says they are Bob can manage the group. That is not an account. Two people who both say they are Bob both have those powers.
 
@@ -73,11 +73,11 @@ A member who still has a payment or a cost share on any expense cannot be remove
 
 ### Saying who you are
 
-In a **public group**, the first time someone opens the group they are asked who they are. They see the names already on the trip (“Hey, are you Alice or Linda?”) and pick one.
+In a **public group**, the first time someone opens the group they are asked who they are, unless they just created it (they already act as the creator member). They see the names already on the trip (“Hey, are you Alice or Linda?”) and pick one.
 
 They can also say they are someone new (“No, I’m Lucas”). That **adds a new member** with that name. They then act as that member.
 
-After they have said who they are, they **act as** that member until they say otherwise. Anyone acting as the same member is treated as the same person for recording and editing expenses. If two people both say they are Lucas, both can change expenses recorded as Lucas.
+After they have said who they are, they **act as** that member on this browser (the anonymous session). There is no switch to another name. A new browser or a lost session is asked again. Anyone acting as the same member is treated as the same person for recording and editing expenses. If two people both say they are Lucas, both can change expenses recorded as Lucas.
 
 Saying who you are is not a login. It is a name on this trip.
 
@@ -215,7 +215,7 @@ The app chooses a small number of payments rather than having every debtor pay e
 | Action | Public group | Private group |
 | --- | --- | --- |
 | Open the group | Anyone with the URL | Signed in with Google, and that account’s email is listed on the group |
-| Say who you are (pick a name, or add your own) | Anyone with the URL, first time they open it | They are the member whose email matches the Google account |
+| Say who you are (pick a name, or add your own) | Anyone with the URL, first time they open it, except the creator on the session that created the group (already that member) | They are the member whose email matches the Google account |
 | Rename or remove members, or add someone else | Anyone acting as the creator member | Only the creator |
 | Add expenses | After saying who you are | After they have access as that member |
 | Change or delete an expense | The member who recorded it, or anyone acting as the creator member | The member who recorded it, or the creator |

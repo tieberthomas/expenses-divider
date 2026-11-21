@@ -9,6 +9,7 @@ A web app for splitting travel costs effortlessly.
 - [Domain](docs/domain.md) — terms and rules
 - [Architecture](docs/architecture.md) — how it is built and shipped
 - [Data model](docs/data-model.md) — tables and RLS
+- [MVP scope](docs/mvp-scope.md) — first shippable slice
 - [Implementation plan](docs/implementation-plan.md) — phases and working decisions
 
 ## Local setup

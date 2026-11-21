@@ -14,10 +14,10 @@ Each phase produces artifacts. A phase is done when those artifacts exist and ma
 | 2 | **Done** | Settled stack, architecture, local setup, deployment | [architecture.md](./architecture.md), [README.md](../README.md) |
 | 3 | **Done** | Product context (who it is for, UX, performance, languages, constraints) | [product-context.md](./product-context.md) |
 | 4 | **Done** | Data model, RLS, Drizzle schema, migration | [data-model.md](./data-model.md), `src/lib/server/db/schema.ts`, `supabase/migrations/20261121120000_create_expenses_divider.sql` |
-| 5 | Not started | MVP scope | `docs/mvp-scope.md` |
+| 5 | **Done** | MVP scope | [mvp-scope.md](./mvp-scope.md) |
 | 6 | Not started | Build the MVP | Working app as defined in the MVP scope |
 
-Later phases may rewrite earlier docs if a decision changes. Keep the docs the source of truth. Phases 1–4 are finished; later phases should follow the domain files, [architecture.md](./architecture.md), [product-context.md](./product-context.md), and [data-model.md](./data-model.md). After phase 5, build only what the MVP scope allows.
+Later phases may rewrite earlier docs if a decision changes. Keep the docs the source of truth. Phases 1–4 are finished; later phases should follow the domain files, [architecture.md](./architecture.md), [product-context.md](./product-context.md), and [data-model.md](./data-model.md). After phase 5, build only what [mvp-scope.md](./mvp-scope.md) allows.
 
 ## Working decisions
 
@@ -25,12 +25,13 @@ These resolve open points in the brief. Change them here if they are wrong; then
 
 1. **Public groups need no visible login.** Creating a public group, opening it, and adding expenses works with the URL. Under the hood the browser gets a Supabase **anonymous** session. “Who you are” is `group_member_identities`. The **creator is a member**, not an Auth user: anyone claiming that member (e.g. Bob) has full admin.
 2. **Google sign-in is required for private groups.** There is never email/password. The app does not send mail: access is URL plus a Google account whose email is listed on the group.
-3. **The first MVP is public groups only** (to confirm in the MVP scope phase). Private groups are specified in domain and architecture, but not built in the first UI.
+3. **The first MVP is public groups only.** See [mvp-scope.md](./mvp-scope.md). Private groups are specified in domain and architecture, but not built in the first UI.
 4. **Members are named people.** A member can exist before anyone logs in. Google identity can later be linked to a member.
 5. **One currency per group.** No currency conversion. For now every group is euro.
 6. **Money is stored as integer minor units** (cents). Display uses the group currency.
 7. **Settlement is computed, not recorded, in the MVP.** The app shows balances and a minimized list of suggested repayments. Marking a repayment as paid is out of the first MVP.
-8. **Who can change what** follows [domain.md](./domain.md): in a public group, anyone acting as the creator member has admin (member list and all expenses); other members edit expenses they recorded; you may add your own name if you are not on the list.
+8. **Who can change what** follows [domain.md](./domain.md). The first UI is narrower: [mvp-scope.md](./mvp-scope.md) (add expenses only; creator may add members later, not rename or remove).
+13. **No switch-name UI.** After someone says who they are, they act as that member for that anonymous session. A new browser or lost session is asked again; that is not a product feature.
 9. **RLS applies on the request path.** SvelteKit loads and writes group data as the visitor’s Auth user (anonymous or Google), never as `service_role` or table owner. The browser still does not query tables (performance). Policies are real, not a deny-all backstop. Details: [architecture.md](./architecture.md).
 10. **PWA / native app and a custom domain are later.** Deploy the web app on Vercel first.
 11. **No automated tests** until the owner asks for them. CI keeps typecheck, lint, and build.
@@ -104,34 +105,19 @@ Later phases should follow the data model. If they disagree with this plan, upda
 
 ## Phase 5 — MVP scope
 
-**Status: not started.**
+**Status: done.**
 
-**Write:** `docs/mvp-scope.md`
+**Outputs:**
 
-After the data model exists, decide **what the first shippable slice includes** and what it does not. This is not the implementation. It is the contract for phase 6.
+- [mvp-scope.md](./mvp-scope.md) — in-scope / out-of-scope for the first shippable slice
 
-Settle at least:
-
-- Public groups only vs any private-group UI
-- Create group, say who you are, add expenses (payments + cost shares), balances, settlement suggestion
-- What the creator member can do in this slice
-- Languages and mobile-first as they apply to this slice
-- Explicit out of scope (Google UI, recording repayments, PWA, tests, …)
-
-A starting draft to confirm or cut, not to treat as already decided:
-
-- Home: create a public group (name, members; euro)
-- Group page at `/g/[groupId]`: members, expenses, add expense (even split or custom amounts, one or more payments), balances, suggested repayments
-- Copy-able group URL; empty and error states
-- Out of scope: Google sign-in UI, private groups, marking repayments paid, extra currencies, PWA, tests
-
-**Done when:** `docs/mvp-scope.md` lists in-scope and out-of-scope so phase 6 does not invent features.
+Phase 6 should follow that file. If it disagrees with this plan, update the plan.
 
 ---
 
 ## Phase 6 — Build the MVP
 
-**Goal:** Implement exactly [mvp-scope.md](./mvp-scope.md). Ugly is acceptable; the split math and the URL-sharing loop are not.
+**Goal:** Implement exactly [mvp-scope.md](./mvp-scope.md). The first UI can look rough. Split amounts, balances, and the settlement suggestion must be correct. Creating a group, sharing the URL, and using that group together must actually work.
 
 **Suggested split of the work**
 
@@ -162,3 +148,5 @@ Only reopen these if the working decisions are wrong:
 - Should creating a **public** group require Google after all?
 - Should the first MVP include private groups?
 - Should suggested repayments be stored as first-class “settled” records in the first MVP?
+
+Answered in [mvp-scope.md](./mvp-scope.md): public only; repayments not stored; add-only expenses; no identity switch.
