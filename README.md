@@ -8,13 +8,14 @@ A web app for splitting travel costs effortlessly.
 - [Domain overview](docs/domain-overview.md) — short walkthrough
 - [Domain](docs/domain.md) — terms and rules
 - [Architecture](docs/architecture.md) — how it is built and shipped
+- [Data model](docs/data-model.md) — tables and RLS
 - [Implementation plan](docs/implementation-plan.md) — phases and working decisions
 
 ## Local setup
 
 Node 22.
 
-1. Copy `.env.example` to `.env`. Set `DATABASE_URL` (migrations) plus `PUBLIC_SUPABASE_URL` and `PUBLIC_SUPABASE_ANON_KEY`. Enable anonymous sign-in in the Supabase project.
+1. Copy `.env.example` to `.env`. Set `PUBLIC_SUPABASE_URL` and `PUBLIC_SUPABASE_ANON_KEY`. Enable anonymous sign-in in the Supabase project.
 2. Run `npm install`.
-3. Run `npm run db:migrate`.
+3. Run `npx supabase login` and `npx supabase link` if you have not already. Schema is applied with `npm run db:push` (`supabase db push --remote`).
 4. Run `npm run dev` and open the displayed local URL.

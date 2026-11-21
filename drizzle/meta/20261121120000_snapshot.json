@@ -1,0 +1,942 @@
+{
+  "id": "d4742c4a-7906-4178-bf07-057dd46e14ac",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.cost_shares": {
+      "name": "cost_shares",
+      "schema": "",
+      "columns": {
+        "group_id": {
+          "name": "group_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expense_id": {
+          "name": "expense_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "member_id": {
+          "name": "member_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount_cents": {
+          "name": "amount_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "cost_shares_expense_id_expenses_id_fk": {
+          "name": "cost_shares_expense_id_expenses_id_fk",
+          "tableFrom": "cost_shares",
+          "tableTo": "expenses",
+          "columnsFrom": [
+            "expense_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "cost_shares_member_id_group_members_id_fk": {
+          "name": "cost_shares_member_id_group_members_id_fk",
+          "tableFrom": "cost_shares",
+          "tableTo": "group_members",
+          "columnsFrom": [
+            "member_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "cost_shares_expense_same_group_fk": {
+          "name": "cost_shares_expense_same_group_fk",
+          "tableFrom": "cost_shares",
+          "tableTo": "expenses",
+          "columnsFrom": [
+            "group_id",
+            "expense_id"
+          ],
+          "columnsTo": [
+            "group_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "cost_shares_member_same_group_fk": {
+          "name": "cost_shares_member_same_group_fk",
+          "tableFrom": "cost_shares",
+          "tableTo": "group_members",
+          "columnsFrom": [
+            "group_id",
+            "member_id"
+          ],
+          "columnsTo": [
+            "group_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "cost_shares_expense_id_member_id_pk": {
+          "name": "cost_shares_expense_id_member_id_pk",
+          "columns": [
+            "expense_id",
+            "member_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "cost_shares_select": {
+          "name": "cost_shares_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.has_group_grant(\"cost_shares\".\"group_id\")"
+        },
+        "cost_shares_insert": {
+          "name": "cost_shares_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "withCheck": "public.can_write_expense(\"cost_shares\".\"group_id\", (SELECT e.recorded_by_member_id FROM public.expenses e WHERE e.id = \"cost_shares\".\"expense_id\"))"
+        },
+        "cost_shares_update": {
+          "name": "cost_shares_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.can_write_expense(\"cost_shares\".\"group_id\", (SELECT e.recorded_by_member_id FROM public.expenses e WHERE e.id = \"cost_shares\".\"expense_id\"))",
+          "withCheck": "public.can_write_expense(\"cost_shares\".\"group_id\", (SELECT e.recorded_by_member_id FROM public.expenses e WHERE e.id = \"cost_shares\".\"expense_id\"))"
+        },
+        "cost_shares_delete": {
+          "name": "cost_shares_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.can_write_expense(\"cost_shares\".\"group_id\", (SELECT e.recorded_by_member_id FROM public.expenses e WHERE e.id = \"cost_shares\".\"expense_id\"))"
+        }
+      },
+      "checkConstraints": {
+        "cost_shares_amount_cents_non_negative": {
+          "name": "cost_shares_amount_cents_non_negative",
+          "value": "\"cost_shares\".\"amount_cents\" >= 0"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.expenses": {
+      "name": "expenses",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "group_id": {
+          "name": "group_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount_cents": {
+          "name": "amount_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "split_mode": {
+          "name": "split_mode",
+          "type": "expense_split_mode",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recorded_by_member_id": {
+          "name": "recorded_by_member_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_by_member_id": {
+          "name": "updated_by_member_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "expenses_group_id_groups_id_fk": {
+          "name": "expenses_group_id_groups_id_fk",
+          "tableFrom": "expenses",
+          "tableTo": "groups",
+          "columnsFrom": [
+            "group_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "expenses_recorded_by_same_group_fk": {
+          "name": "expenses_recorded_by_same_group_fk",
+          "tableFrom": "expenses",
+          "tableTo": "group_members",
+          "columnsFrom": [
+            "group_id",
+            "recorded_by_member_id"
+          ],
+          "columnsTo": [
+            "group_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "expenses_updated_by_same_group_fk": {
+          "name": "expenses_updated_by_same_group_fk",
+          "tableFrom": "expenses",
+          "tableTo": "group_members",
+          "columnsFrom": [
+            "group_id",
+            "updated_by_member_id"
+          ],
+          "columnsTo": [
+            "group_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "expenses_group_id_id_unique": {
+          "name": "expenses_group_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "group_id",
+            "id"
+          ]
+        }
+      },
+      "policies": {
+        "expenses_select": {
+          "name": "expenses_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.has_group_grant(\"expenses\".\"group_id\")"
+        },
+        "expenses_insert": {
+          "name": "expenses_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "withCheck": "public.acting_member_id(\"expenses\".\"group_id\") IS NOT NULL\n\t\t\t\tAND \"expenses\".\"recorded_by_member_id\" IS NOT DISTINCT FROM public.acting_member_id(\"expenses\".\"group_id\")\n\t\t\t\tAND \"expenses\".\"updated_by_member_id\" IS NOT DISTINCT FROM public.acting_member_id(\"expenses\".\"group_id\")"
+        },
+        "expenses_update": {
+          "name": "expenses_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.can_write_expense(\"expenses\".\"group_id\", \"expenses\".\"recorded_by_member_id\")",
+          "withCheck": "public.can_write_expense(\"expenses\".\"group_id\", \"expenses\".\"recorded_by_member_id\")\n\t\t\t\tAND \"expenses\".\"updated_by_member_id\" IS NOT DISTINCT FROM public.acting_member_id(\"expenses\".\"group_id\")"
+        },
+        "expenses_delete": {
+          "name": "expenses_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.can_write_expense(\"expenses\".\"group_id\", \"expenses\".\"recorded_by_member_id\")"
+        }
+      },
+      "checkConstraints": {
+        "expenses_amount_cents_positive": {
+          "name": "expenses_amount_cents_positive",
+          "value": "\"expenses\".\"amount_cents\" > 0"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.group_access_grants": {
+      "name": "group_access_grants",
+      "schema": "",
+      "columns": {
+        "group_id": {
+          "name": "group_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "auth_user_id": {
+          "name": "auth_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "group_access_grants_group_id_groups_id_fk": {
+          "name": "group_access_grants_group_id_groups_id_fk",
+          "tableFrom": "group_access_grants",
+          "tableTo": "groups",
+          "columnsFrom": [
+            "group_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "group_access_grants_group_id_auth_user_id_pk": {
+          "name": "group_access_grants_group_id_auth_user_id_pk",
+          "columns": [
+            "group_id",
+            "auth_user_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "group_access_grants_select": {
+          "name": "group_access_grants_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "\"group_access_grants\".\"auth_user_id\" = auth.uid()"
+        },
+        "group_access_grants_insert": {
+          "name": "group_access_grants_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "withCheck": "\"group_access_grants\".\"auth_user_id\" = auth.uid()\n\t\t\t\tAND (\n\t\t\t\t\tpublic.group_is_public(\"group_access_grants\".\"group_id\")\n\t\t\t\t\tOR public.group_email_matches_uid(\"group_access_grants\".\"group_id\")\n\t\t\t\t)"
+        },
+        "group_access_grants_delete": {
+          "name": "group_access_grants_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "\"group_access_grants\".\"auth_user_id\" = auth.uid()"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.group_member_identities": {
+      "name": "group_member_identities",
+      "schema": "",
+      "columns": {
+        "group_id": {
+          "name": "group_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "group_member_id": {
+          "name": "group_member_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "auth_user_id": {
+          "name": "auth_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "group_member_identities_member_same_group_fk": {
+          "name": "group_member_identities_member_same_group_fk",
+          "tableFrom": "group_member_identities",
+          "tableTo": "group_members",
+          "columnsFrom": [
+            "group_id",
+            "group_member_id"
+          ],
+          "columnsTo": [
+            "group_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "group_member_identities_group_id_auth_user_id_pk": {
+          "name": "group_member_identities_group_id_auth_user_id_pk",
+          "columns": [
+            "group_id",
+            "auth_user_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "group_member_identities_select": {
+          "name": "group_member_identities_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.has_group_grant(\"group_member_identities\".\"group_id\") OR \"group_member_identities\".\"auth_user_id\" = auth.uid()"
+        },
+        "group_member_identities_insert": {
+          "name": "group_member_identities_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "withCheck": "\"group_member_identities\".\"auth_user_id\" = auth.uid() AND public.has_group_grant(\"group_member_identities\".\"group_id\")"
+        },
+        "group_member_identities_update": {
+          "name": "group_member_identities_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "\"group_member_identities\".\"auth_user_id\" = auth.uid()",
+          "withCheck": "\"group_member_identities\".\"auth_user_id\" = auth.uid() AND public.has_group_grant(\"group_member_identities\".\"group_id\")"
+        },
+        "group_member_identities_delete": {
+          "name": "group_member_identities_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "\"group_member_identities\".\"auth_user_id\" = auth.uid() OR public.is_group_creator(\"group_member_identities\".\"group_id\")"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.group_members": {
+      "name": "group_members",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "group_id": {
+          "name": "group_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "group_members_group_name_unique": {
+          "name": "group_members_group_name_unique",
+          "columns": [
+            {
+              "expression": "group_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "lower(\"name\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "group_members_group_email_unique": {
+          "name": "group_members_group_email_unique",
+          "columns": [
+            {
+              "expression": "group_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "lower(\"email\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"group_members\".\"email\" IS NOT NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "group_members_group_id_groups_id_fk": {
+          "name": "group_members_group_id_groups_id_fk",
+          "tableFrom": "group_members",
+          "tableTo": "groups",
+          "columnsFrom": [
+            "group_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "group_members_group_id_id_unique": {
+          "name": "group_members_group_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "group_id",
+            "id"
+          ]
+        }
+      },
+      "policies": {
+        "group_members_select": {
+          "name": "group_members_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.has_group_grant(\"group_members\".\"group_id\")"
+        },
+        "group_members_insert": {
+          "name": "group_members_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "withCheck": "public.is_group_creator(\"group_members\".\"group_id\")\n\t\t\t\tOR public.has_group_grant(\"group_members\".\"group_id\")\n\t\t\t\tOR (auth.uid() IS NOT NULL AND public.group_has_no_grants(\"group_members\".\"group_id\"))"
+        },
+        "group_members_update": {
+          "name": "group_members_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.is_group_creator(\"group_members\".\"group_id\")",
+          "withCheck": "public.is_group_creator(\"group_members\".\"group_id\")"
+        },
+        "group_members_delete": {
+          "name": "group_members_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.is_group_creator(\"group_members\".\"group_id\")"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.groups": {
+      "name": "groups",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency_code": {
+          "name": "currency_code",
+          "type": "char(3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "access_mode": {
+          "name": "access_mode",
+          "type": "group_access_mode",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "creator_member_id": {
+          "name": "creator_member_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "groups_id_creator_member_id_unique": {
+          "name": "groups_id_creator_member_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "creator_member_id"
+          ]
+        }
+      },
+      "policies": {
+        "groups_select": {
+          "name": "groups_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.has_group_grant(\"groups\".\"id\")"
+        },
+        "groups_insert": {
+          "name": "groups_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "withCheck": "auth.uid() IS NOT NULL"
+        },
+        "groups_update": {
+          "name": "groups_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.is_group_creator(\"groups\".\"id\")",
+          "withCheck": "public.is_group_creator(\"groups\".\"id\")"
+        },
+        "groups_delete": {
+          "name": "groups_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.is_group_creator(\"groups\".\"id\")"
+        }
+      },
+      "checkConstraints": {
+        "groups_currency_code_format": {
+          "name": "groups_currency_code_format",
+          "value": "\"groups\".\"currency_code\" ~ '^[A-Z]{3}$'"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.payments": {
+      "name": "payments",
+      "schema": "",
+      "columns": {
+        "group_id": {
+          "name": "group_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expense_id": {
+          "name": "expense_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "member_id": {
+          "name": "member_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount_cents": {
+          "name": "amount_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "payments_expense_id_expenses_id_fk": {
+          "name": "payments_expense_id_expenses_id_fk",
+          "tableFrom": "payments",
+          "tableTo": "expenses",
+          "columnsFrom": [
+            "expense_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payments_member_id_group_members_id_fk": {
+          "name": "payments_member_id_group_members_id_fk",
+          "tableFrom": "payments",
+          "tableTo": "group_members",
+          "columnsFrom": [
+            "member_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "payments_expense_same_group_fk": {
+          "name": "payments_expense_same_group_fk",
+          "tableFrom": "payments",
+          "tableTo": "expenses",
+          "columnsFrom": [
+            "group_id",
+            "expense_id"
+          ],
+          "columnsTo": [
+            "group_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payments_member_same_group_fk": {
+          "name": "payments_member_same_group_fk",
+          "tableFrom": "payments",
+          "tableTo": "group_members",
+          "columnsFrom": [
+            "group_id",
+            "member_id"
+          ],
+          "columnsTo": [
+            "group_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "payments_expense_id_member_id_pk": {
+          "name": "payments_expense_id_member_id_pk",
+          "columns": [
+            "expense_id",
+            "member_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "payments_select": {
+          "name": "payments_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.has_group_grant(\"payments\".\"group_id\")"
+        },
+        "payments_insert": {
+          "name": "payments_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "withCheck": "public.can_write_expense(\"payments\".\"group_id\", (SELECT e.recorded_by_member_id FROM public.expenses e WHERE e.id = \"payments\".\"expense_id\"))"
+        },
+        "payments_update": {
+          "name": "payments_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.can_write_expense(\"payments\".\"group_id\", (SELECT e.recorded_by_member_id FROM public.expenses e WHERE e.id = \"payments\".\"expense_id\"))",
+          "withCheck": "public.can_write_expense(\"payments\".\"group_id\", (SELECT e.recorded_by_member_id FROM public.expenses e WHERE e.id = \"payments\".\"expense_id\"))"
+        },
+        "payments_delete": {
+          "name": "payments_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.can_write_expense(\"payments\".\"group_id\", (SELECT e.recorded_by_member_id FROM public.expenses e WHERE e.id = \"payments\".\"expense_id\"))"
+        }
+      },
+      "checkConstraints": {
+        "payments_amount_cents_positive": {
+          "name": "payments_amount_cents_positive",
+          "value": "\"payments\".\"amount_cents\" > 0"
+        }
+      },
+      "isRLSEnabled": true
+    }
+  },
+  "enums": {
+    "public.expense_split_mode": {
+      "name": "expense_split_mode",
+      "schema": "public",
+      "values": [
+        "even",
+        "custom"
+      ]
+    },
+    "public.group_access_mode": {
+      "name": "group_access_mode",
+      "schema": "public",
+      "values": [
+        "public",
+        "private"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

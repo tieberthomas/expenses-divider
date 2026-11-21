@@ -11,13 +11,13 @@ How Expenses Divider is built, run, and shipped.
 | App | SvelteKit 2, Svelte 5, TypeScript |
 | UI | Tailwind CSS 4, shadcn-svelte, Lucide |
 | Database | Supabase Postgres |
-| ORM / migrations | Drizzle ORM, Drizzle Kit |
+| ORM / migrations | Drizzle schema and `drizzle-kit generate`; apply with `supabase db push` |
 | Auth | Supabase Auth: anonymous sessions (under the hood) and Google (when a login is required) |
 | Email | None. The app does not send mail. |
 | i18n | Paraglide (see [Languages](#languages)) |
 | Hosting | Vercel (`@sveltejs/adapter-vercel`) |
 | Repo | GitHub |
-| CI | GitHub Actions: `ci` on PRs and `main`; manual production migrate |
+| CI | GitHub Actions: `ci` on PRs and `main` |
 | Tests | None for now |
 
 Local Supabase is optional. A hosted Supabase project is enough for development.
@@ -49,9 +49,7 @@ SvelteKit is the public API. Pages load in server `load` functions. Writes go th
 
 On first visit, the server signs the browser in **anonymously** (no UI). That session is a real `auth.users` row. `auth.uid()` is what RLS uses. Google later can be linked to the same user.
 
-**Group data on the request path** uses the Supabase server client **with that user’s JWT** (the anon/authenticated key, never `service_role`). Postgres then applies RLS. Do not use Drizzle with `DATABASE_URL` for those queries: that role is table owner and **bypasses** RLS.
-
-`DATABASE_URL` is private and only for **migrations** (Drizzle Kit) and other break-glass admin. Never prefix it with `PUBLIC_`. Transaction pooler, port 6543, `prepare: false`.
+**Group data on the request path** uses the Supabase server client **with that user’s JWT** (the anon/authenticated key, never `service_role`). Postgres then applies RLS. Do not query as table owner: that role **bypasses** RLS.
 
 The browser still should not query tables itself (performance: one round trip, little JS). The anon key will exist for Auth; **RLS is what stops that key from dumping the database.**
 
@@ -61,13 +59,13 @@ Never use the Supabase `service_role` key on the request path.
 
 ## Row Level Security
 
-Every application table has RLS enabled. **Policies are real and enforced** for `anon` and `authenticated`. Request-path access must succeed or fail through those policies, not around them.
+Every application table has RLS enabled. **Policies are real and enforced** for `anon` and `authenticated`. They are declared on the Drizzle tables (`pgPolicy`). Helpers and GRANTs stay in SQL. Request-path access must succeed or fail through those policies, not around them.
 
 Who may do what is [domain.md](./domain.md). Policies implement that with `auth.uid()`, **grants**, and **identities**.
 
 A policy that is true for every public group would leak every UUID. First open of `/g/[groupId]` records a **grant** for this user to this group. Policies key off grants and identities, not `access_mode = public`.
 
-If SvelteKit used the pooler as table owner, RLS would not run. That is why the request path does not use that connection.
+If SvelteKit used a table-owner connection, RLS would not run. That is why the request path uses the visitor’s JWT.
 
 ---
 
@@ -110,7 +108,6 @@ Use [Paraglide](https://inlang.com/m/gerre34r/library-inlang-paraglideJs). Persi
 
 | Variable | When |
 | --- | --- |
-| `DATABASE_URL` | Migrations only. Transaction pooler (Connect → ORMs → Drizzle). |
 | `PUBLIC_SUPABASE_URL` | Always. Auth + user-scoped data access (RLS). |
 | `PUBLIC_SUPABASE_ANON_KEY` | Always. Never `service_role`. |
 
@@ -120,7 +117,7 @@ Use [Paraglide](https://inlang.com/m/gerre34r/library-inlang-paraglideJs). Persi
 | --- | --- |
 | Google provider in the Supabase project | Private groups / visible sign-in |
 
-Vercel gets `DATABASE_URL` (migrate workflow / Kit) plus the public Supabase URL and anon key (the app).
+Vercel gets the public Supabase URL and anon key. It does not get a table-owner database URL.
 
 ---
 
@@ -130,10 +127,13 @@ GitHub is the source of truth. Vercel deploys from `main`.
 
 Vercel does **not** run migrations at application startup.
 
-Migrations live in `drizzle/` and are committed with the code that needs them. After merge:
+Drizzle Kit **generates** SQL from `src/lib/server/db/schema.ts` using the snapshot and journal in `drizzle/meta/` (baseline tag matches `20261121120000_create_expenses_divider`). Kit uses the `supabase` filename prefix (`YYYYMMDDHHMMSS_name`). Applied migrations live in `supabase/migrations/` and are committed with the code that needs them. Do not keep a second copy of the SQL under `drizzle/`.
 
-1. Run the GitHub Actions workflow **Migrate production database** (manual). It uses the `DATABASE_URL` secret in the GitHub `production` environment.
-2. Deploy or enable the code that depends on the new schema.
+After merge:
+
+1. Copy the newly generated `drizzle/*.sql` into `supabase/migrations/` (same timestamp filename), then delete the file from `drizzle/`.
+2. Run `npm run db:push` (`npx supabase db push --remote`) against the linked project.
+3. Deploy or enable the code that depends on the new schema.
 
 Prefer backwards-compatible migrations once real expense data exists (add before removing).
 

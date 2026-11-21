@@ -13,11 +13,11 @@ Each phase produces artifacts. A phase is done when those artifacts exist and ma
 | 1 | **Done** | Shared language for the product | [domain-overview.md](./domain-overview.md), [domain.md](./domain.md) |
 | 2 | **Done** | Settled stack, architecture, local setup, deployment | [architecture.md](./architecture.md), [README.md](../README.md) |
 | 3 | **Done** | Product context (who it is for, UX, performance, languages, constraints) | [product-context.md](./product-context.md) |
-| 4 | Not started | Data model, RLS, Drizzle schema, migration | `docs/data-model.md`, `src/lib/server/db/schema.ts`, a new Drizzle migration |
+| 4 | **Done** | Data model, RLS, Drizzle schema, migration | [data-model.md](./data-model.md), `src/lib/server/db/schema.ts`, `supabase/migrations/20261121120000_create_expenses_divider.sql` |
 | 5 | Not started | MVP scope | `docs/mvp-scope.md` |
 | 6 | Not started | Build the MVP | Working app as defined in the MVP scope |
 
-Later phases may rewrite earlier docs if a decision changes. Keep the docs the source of truth. Phases 1–3 are finished; later phases should follow the domain files, [architecture.md](./architecture.md), and [product-context.md](./product-context.md). After phase 5, build only what the MVP scope allows.
+Later phases may rewrite earlier docs if a decision changes. Keep the docs the source of truth. Phases 1–4 are finished; later phases should follow the domain files, [architecture.md](./architecture.md), [product-context.md](./product-context.md), and [data-model.md](./data-model.md). After phase 5, build only what the MVP scope allows.
 
 ## Working decisions
 
@@ -31,7 +31,7 @@ These resolve open points in the brief. Change them here if they are wrong; then
 6. **Money is stored as integer minor units** (cents). Display uses the group currency.
 7. **Settlement is computed, not recorded, in the MVP.** The app shows balances and a minimized list of suggested repayments. Marking a repayment as paid is out of the first MVP.
 8. **Who can change what** follows [domain.md](./domain.md): in a public group, anyone acting as the creator member has admin (member list and all expenses); other members edit expenses they recorded; you may add your own name if you are not on the list.
-9. **RLS applies on the request path.** SvelteKit loads and writes group data as the visitor’s Auth user (anonymous or Google), never as `service_role` or table owner. `DATABASE_URL` is for migrations only. The browser still does not query tables (performance). Policies are real, not a deny-all backstop. Details: [architecture.md](./architecture.md).
+9. **RLS applies on the request path.** SvelteKit loads and writes group data as the visitor’s Auth user (anonymous or Google), never as `service_role` or table owner. The browser still does not query tables (performance). Policies are real, not a deny-all backstop. Details: [architecture.md](./architecture.md).
 10. **PWA / native app and a custom domain are later.** Deploy the web app on Vercel first.
 11. **No automated tests** until the owner asks for them. CI keeps typecheck, lint, and build.
 12. **Languages, performance, and mobile-first** live in [product-context.md](./product-context.md). Architecture keeps only the technical implications (server render, little JS).
@@ -42,13 +42,10 @@ Already in place and should be treated as the default unless a later phase repla
 
 - SvelteKit, TypeScript, Tailwind CSS 4, shadcn-svelte (vega / neutral), Lucide
 - `@sveltejs/adapter-vercel`
-- Drizzle ORM + Drizzle Kit, `postgres` driver, transaction pooler (`prepare: false`)
-- Tables: `groups`, `group_members`, `group_member_identities`, `expenses`, `expense_shares`
-- RLS enabled on all app tables, with no client policies yet
-- GitHub Actions: `ci` on pull requests and `main`; manual **Migrate production database** workflow
+- Drizzle schema + Kit generate; apply with `supabase db push`
+- Tables: see [data-model.md](./data-model.md)
+- GitHub Actions: `ci` on pull requests and `main`
 - Landing page copy only; no group UI yet
-
-`created_by_user_id` on groups should not be the public-group creator. Phase 4 (data model) stores a **creator member** instead. RLS admin = identity linked to that member. Request-path code must not use the table-owner `DATABASE_URL`.
 
 ---
 
@@ -92,51 +89,16 @@ This file is the source of truth for product intent that is not domain language 
 
 ## Phase 4 — Data model, RLS, schema, migration
 
-**Goal:** A model that matches the domain, including RLS. Implement it in Drizzle and ship a migration. Document it.
+**Status: done.**
 
-**Write:** `docs/data-model.md`  
-**Change:** `src/lib/server/db/schema.ts`  
-**Generate:** a new Drizzle migration (do not hand-edit old applied migrations if they may already have been used). If the current MVP schema was never used with real data, replacing `0001` is acceptable; say so in the data-model doc.
+**Outputs:**
 
-### Model to design (map from domain)
+- [data-model.md](./data-model.md) — tables, grants vs identities, RLS
+- `src/lib/server/db/schema.ts`
+- `drizzle/meta/` (Kit generate snapshots)
+- `supabase/migrations/20261121120000_create_expenses_divider.sql` (applied via `supabase db push`)
 
-Keep the current shape unless a rule below forces a change:
-
-- **groups:** id, name, currency, access mode (`public_link` | `private`), created at. Creator: a **member** (`creator_member_id` or equivalent), not an Auth user. Anyone linked to that member has admin in a public group.
-- **group_members:** person on the trip; name required; email optional (needed later for private invites).
-- **group_member_identities:** links `auth.users` to a member in a group (one Auth user maps to one member per group; several Auth users may be the same member, e.g. two people claiming Lucas).
-- **group access grants** (name in the data-model doc): this `auth.uid()` may see this group. Inserted when they open a public group URL, so RLS does not allow listing every public group.
-- **expenses:** description, amount in minor units, payer member, timestamps. Optional display date can wait.
-- **expense_shares:** one row per participating member; amounts in minor units; shares for an expense must sum to the expense total (enforce in the application in MVP; add a DB constraint or trigger later if we want).
-
-Do **not** add a settlements table in this phase.
-
-### Integrity rules
-
-- Payer and share members must belong to the same group as the expense (the current composite FKs are good; keep them).
-- Amounts: expense total `> 0`; share amounts `>= 0`.
-- Unique email per group when email is present.
-- Deleting a group deletes members and expenses. Do not delete a member who still pays or shares an expense (restrict), or define an explicit reassignment rule in the data-model doc.
-
-### RLS
-
-Document and implement (must match [architecture.md](./architecture.md); do not bypass):
-
-- `ENABLE ROW LEVEL SECURITY` on every public table (already true).
-- **Policies for `anon` and `authenticated`** so `auth.uid()` can read/write only what the domain allows (grants, identities, recorded-by, creator **member**).
-- No `USING (true)` that would let the anon key list every group.
-- Do not use `DATABASE_URL` / table owner / `service_role` for app queries. Later app code uses the user JWT.
-- Private-group rules (email matches member) belong in the same policies even if that UI is later.
-
-### Migration process
-
-1. Update `schema.ts`.
-2. `npm run db:generate`.
-3. Review the SQL (especially FKs to `auth.users` and RLS).
-4. Apply on the development database with `npm run db:migrate`.
-5. Commit schema + migration together.
-
-**Done when:** `docs/data-model.md` explains tables, relationships, money, access, and RLS; the migration applies cleanly on a fresh development database.
+Later phases should follow the data model. If they disagree with this plan, update the plan.
 
 ---
 

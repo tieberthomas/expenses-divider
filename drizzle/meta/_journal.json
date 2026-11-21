@@ -1,13 +1,13 @@
 {
-	"version": "7",
-	"dialect": "postgresql",
-	"entries": [
-		{
-			"idx": 0,
-			"version": "7",
-			"when": 1786392600000,
-			"tag": "0000_demo_counter",
-			"breakpoints": true
-		}
-	]
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1795262400000,
+      "tag": "20261121120000_create_expenses_divider",
+      "breakpoints": true
+    }
+  ]
 }
