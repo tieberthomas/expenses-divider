@@ -1,16 +1,8 @@
 # Domain
 
-This is the shared language for Expenses Divider. It is written for people, not for databases or frameworks. [Product context](./product-context.md) says why the product exists. This file says what the words mean and which rules always hold. For a short walkthrough, see [domain-overview.md](./domain-overview.md).
+This is the shared language for Expenses Divider. It is written for people, not for databases or frameworks. This file says what the words mean and which rules always hold.
 
 When the data model or the app disagrees with this document, this document wins until it is deliberately changed.
-
----
-
-## The product
-
-**Expenses Divider** is a place for a small group of people to record travel costs and see who still owes whom.
-
-It is for trips, not for household bills or ongoing shared living. People use it while they travel and when they settle up afterwards.
 
 ---
 

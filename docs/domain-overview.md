@@ -1,6 +1,6 @@
 # Domain overview
 
-A short walkthrough of Expenses Divider. Detailed terms and rules are in [domain.md](./domain.md).
+A short walkthrough of Expenses Divider.
 
 Expenses Divider is for a trip: people record what they paid and see who still owes whom.
 

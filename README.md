@@ -1,8 +1,14 @@
 # Expenses Divider
 
-A web app for splitting travel costs. Product language: [domain overview](docs/domain-overview.md). How the system is built: [architecture](docs/architecture.md).
+A web app for splitting travel costs effortlessly.
 
-The UI is German and English. These docs are English.
+## Docs
+
+- [Product context](docs/product-context.md) — who it is for, devices, languages, quality bar
+- [Domain overview](docs/domain-overview.md) — short walkthrough
+- [Domain](docs/domain.md) — terms and rules
+- [Architecture](docs/architecture.md) — how it is built and shipped
+- [Implementation plan](docs/implementation-plan.md) — phases and working decisions
 
 ## Local setup
 
