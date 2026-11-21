@@ -1,6 +1,6 @@
 # Architecture
 
-How Expenses Divider is built, run, and shipped. Product language is in [domain-overview.md](./domain-overview.md) and [domain.md](./domain.md). Clone-and-run steps are in [README.md](../README.md).
+How Expenses Divider is built, run, and shipped. Who it is for and the quality bar: [product-context.md](./product-context.md). Product language: [domain-overview.md](./domain-overview.md) and [domain.md](./domain.md). Clone-and-run: [README.md](../README.md).
 
 ---
 

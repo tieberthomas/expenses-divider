@@ -12,12 +12,12 @@ Each phase produces artifacts. A phase is done when those artifacts exist and ma
 | --- | --- | --- | --- |
 | 1 | **Done** | Shared language for the product | [domain-overview.md](./domain-overview.md), [domain.md](./domain.md) |
 | 2 | **Done** | Settled stack, architecture, local setup, deployment | [architecture.md](./architecture.md), [README.md](../README.md) |
-| 3 | Not started | Product context (who it is for, UX, performance, languages, constraints) | [product-context.md](./product-context.md) |
+| 3 | **Done** | Product context (who it is for, UX, performance, languages, constraints) | [product-context.md](./product-context.md) |
 | 4 | Not started | Data model, RLS, Drizzle schema, migration | `docs/data-model.md`, `src/lib/server/db/schema.ts`, a new Drizzle migration |
 | 5 | Not started | MVP scope | `docs/mvp-scope.md` |
 | 6 | Not started | Build the MVP | Working app as defined in the MVP scope |
 
-Later phases may rewrite earlier docs if a decision changes. Keep the docs the source of truth. Phases 1 and 2 are finished; later phases should follow the domain files and [architecture.md](./architecture.md). After phase 3, also follow product context. After phase 5, build only what the MVP scope allows.
+Later phases may rewrite earlier docs if a decision changes. Keep the docs the source of truth. Phases 1–3 are finished; later phases should follow the domain files, [architecture.md](./architecture.md), and [product-context.md](./product-context.md). After phase 5, build only what the MVP scope allows.
 
 ## Working decisions
 
@@ -34,7 +34,7 @@ These resolve open points in the brief. Change them here if they are wrong; then
 9. **RLS applies on the request path.** SvelteKit loads and writes group data as the visitor’s Auth user (anonymous or Google), never as `service_role` or table owner. `DATABASE_URL` is for migrations only. The browser still does not query tables (performance). Policies are real, not a deny-all backstop. Details: [architecture.md](./architecture.md).
 10. **PWA / native app and a custom domain are later.** Deploy the web app on Vercel first.
 11. **No automated tests** until the owner asks for them. CI keeps typecheck, lint, and build.
-12. **Languages, performance, and mobile-first** are product-context concerns (phase 3), not domain terms. Draft notes: UI is German and English (default English); the app must feel fast on older phones; UI is mobile first. Phase 3 writes these into [product-context.md](./product-context.md). Architecture may keep the technical implications (server render, little JS).
+12. **Languages, performance, and mobile-first** live in [product-context.md](./product-context.md). Architecture keeps only the technical implications (server render, little JS).
 
 ## Current repo (starting point)
 
@@ -80,23 +80,13 @@ These two files are the architecture source of truth. Later phases should follow
 
 ## Phase 3 — Product context
 
-**Status: not started.** A draft [product-context.md](./product-context.md) already exists from earlier in the project. This phase rewrites it so it is the source of truth for product intent that is **not** domain language and **not** stack/architecture.
+**Status: done.**
 
-**Write:** [product-context.md](./product-context.md)
+**Outputs:**
 
-**Put here (not in domain.md, not as a UI chapter in architecture.md):**
+- [product-context.md](./product-context.md) — audience, typical use, devices, speed, languages, UX bar, what is not now
 
-- Who the product is for, and who it is not for
-- Typical use (travel split, share a URL)
-- Languages (German and English UI; docs in English; default English)
-- Performance: the app must feel fast, including on older phones and slow connections
-- Mobile first: designed for phones; desktop is the same screens, wider
-- UX bar (simpler than Splitwise for this case)
-- Constraints that are product, not domain: no tests for now, no PWA yet, no custom domain yet, no email from the app
-
-Align the draft with the domain (public vs private groups, no mail invites, creator is a member). Drop stale “link group” / “invitations go out by email” wording. Drop stack lists; those live in architecture.
-
-**Done when:** a new reader can answer “what are we building, for whom, on which devices, with which quality bar?” from this file alone, without opening architecture.md.
+This file is the source of truth for product intent that is not domain language and not stack. Later phases should follow it. If it disagrees with this plan, update the plan.
 
 ---
 
